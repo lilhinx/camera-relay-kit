@@ -232,10 +232,10 @@ open class LocalSourceStreamProvider:NSObject, ObservableObject
         let name:NSNotification.Name = .AVCaptureDeviceWasConnected
         NotificationCenter.default.addObserver( forName:name, object: nil, queue: nil )
         {
-            ( notif ) -> Void in
-            if self.sourceStream == nil 
+            [weak self]( notif ) -> Void in
+            if self?.sourceStream == nil
             {
-                self.connectToCamera( )
+                self?.connectToCamera( )
             }
         }
     }

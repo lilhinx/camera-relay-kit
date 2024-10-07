@@ -48,41 +48,61 @@ public class StreamProviderPlayer:AVPlayer
 
 public class PlayerStreamProvider:LocalSourceStreamProvider
 {
-	let player:StreamProviderPlayer
-	let renderQueue:DispatchQueue = .init( label:"renderoutput" )
-	public init( player:StreamProviderPlayer, configuration:ConfigurationProvider, logger:Logger )
-	{
-		self.player = player
-		super.init( configuration:configuration, logger:logger )
-		player.addPeriodicTimeObserver( forInterval:configuration.maxFrameDuration, queue:renderQueue )
-		{
-			[weak self] time in
-			guard let self = self else
-			{
-				return
-			}
-			
-			guard let output = self.player.displayOutput else
-			{
-				return
-			}
-			
-			guard let pixelBuffer = output.copyPixelBuffer( forItemTime:time, itemTimeForDisplay:nil ) else
-			{
-				return
-			}
-			
-			do
-			{
-				let sampleBuffer = try CMSampleBuffer.createSampleBufferFrom( pixelBuffer:pixelBuffer )
-				self.enqueue( sampleBuffer )
-			}
-			catch
-			{
-				print( error.localizedDescription )
-			}
-		}
-		
-	
-	}
+    let player:StreamProviderPlayer
+    let renderQueue:DispatchQueue = .init( label:"renderoutput" )
+    
+    public init( player:StreamProviderPlayer, configuration:ConfigurationProvider, logger:Logger )
+    {
+        print( "PlayerStreamProvider init" )
+        self.player = player
+        super.init( configuration:configuration, logger:logger )
+    }
+    
+    deinit
+    {
+        print( "PlayerStreamProvider deinit" )
+    }
+    
+    private var timeObserver:Any?
+    public func start( )
+    {
+        timeObserver = player.addPeriodicTimeObserver( forInterval:configuration.maxFrameDuration, queue:renderQueue )
+        {
+            [weak self] time in
+            guard let self = self else
+            {
+                return
+            }
+            
+            guard let output = self.player.displayOutput else
+            {
+                return
+            }
+            
+            guard let pixelBuffer = output.copyPixelBuffer( forItemTime:time, itemTimeForDisplay:nil ) else
+            {
+                return
+            }
+            
+            do
+            {
+                let sampleBuffer = try CMSampleBuffer.createSampleBufferFrom( pixelBuffer:pixelBuffer )
+                self.enqueue( sampleBuffer )
+            }
+            catch
+            {
+                print( error.localizedDescription )
+            }
+        }
+    }
+    
+    public func stop( )
+    {
+        guard let timeObserver = timeObserver else
+        {
+            return
+        }
+        
+        player.removeTimeObserver( timeObserver )
+    }
 }
