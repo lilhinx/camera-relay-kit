@@ -9,6 +9,7 @@ import Foundation
 import AVFoundation
 import OSLog
 
+@Observable
 public class StreamProviderPlayer:AVPlayer
 {
 	public override func replaceCurrentItem( with item:AVPlayerItem? )
@@ -44,6 +45,8 @@ public class StreamProviderPlayer:AVPlayer
 		
 		return currentItem.outputs[ 1 ] as? AVPlayerItemVideoOutput
 	}
+    
+    public internal (set) var displayTime:CMTime = .zero
 }
 
 public class PlayerStreamProvider:LocalSourceStreamProvider
@@ -73,6 +76,8 @@ public class PlayerStreamProvider:LocalSourceStreamProvider
             {
                 return
             }
+            
+            player.displayTime = player.currentTime( )
             
             guard let output = self.player.displayOutput else
             {
